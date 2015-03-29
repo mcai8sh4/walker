@@ -70,9 +70,9 @@ public class Render3D extends Render {
 				}
 			}
 		}
-// RENDER LEVEL WALLS
+		// RENDER LEVEL WALLS
 		Level level = game.level;
-		int size = 10;
+		int size = 20;
 		for (int xblock = -size; xblock <= size; xblock++) {
 			for (int zblock = -size; zblock <= size; zblock++) {
 				Block block = level.create(xblock, zblock);
@@ -82,16 +82,20 @@ public class Render3D extends Render {
 				if (block.solid) {
 					if (!east.solid) {
 						renderWall(xblock + 1, xblock + 1, zblock, zblock + 1, 0);
+						renderWall(xblock + 1, xblock + 1, zblock, zblock + 1, 0.5);
 					}
 					if (!south.solid) {
 						renderWall(xblock + 1, xblock, zblock + 1, zblock + 1, 0);
+						renderWall(xblock + 1, xblock, zblock + 1, zblock + 1, 0.5);
 					}
 				} else {
 					if (east.solid) {
 						renderWall(xblock + 1, xblock + 1, zblock + 1, zblock, 0);
+						renderWall(xblock + 1, xblock + 1, zblock + 1, zblock, 0.5);
 					}
 					if (south.solid) {
 						renderWall(xblock, xblock + 1, zblock + 1, zblock + 1, 0);
+						renderWall(xblock, xblock + 1, zblock + 1, zblock + 1, 0.5);
 					}
 				}
 			}
@@ -120,7 +124,7 @@ public class Render3D extends Render {
 
 		double tex30 = 0;
 		double tex40 = 8;
-		double clip = 0.5;
+		double clip = .01;
 
 		if (rotLeftSideZ < clip && rotRightSideZ < clip) {
 			return;
@@ -141,29 +145,6 @@ public class Render3D extends Render {
 		double xPixelLeft = (rotLeftSideX / rotLeftSideZ * height + width / 2);
 		double xPixelRight = (rotRightSideX / rotRightSideZ * height + width / 2);
 
-		// Enable visualisation of both sides of the thin walls!!
-		if (xPixelLeft >= xPixelRight) {
-			double tmp; // place to store stuff whilst swapping values
-			tmp = xPixelLeft;
-			xPixelLeft = xPixelRight;
-			xPixelRight = tmp;
-			
-			tmp = yCornerTL;
-			yCornerTL = yCornerTR;
-			yCornerTR = tmp;
-			
-			tmp = yCornerBL;
-			yCornerBL = yCornerBR;
-			yCornerBR = tmp;
-			
-			tmp = rotLeftSideZ;
-			rotLeftSideZ = rotRightSideZ;
-			rotRightSideZ = tmp;
-			
-			
-			//	return;
-		}
-
 		int xPixelLeftInt = (int) (xPixelLeft);
 		int xPixelRightInt = (int) (xPixelRight);
 
@@ -183,6 +164,36 @@ public class Render3D extends Render {
 		double tex2 = 1 / rotRightSideZ;
 		double tex3 = tex30 / rotLeftSideZ;
 		double tex4 = tex40 / rotRightSideZ - tex3;
+
+		// Enable visualisation of both sides of the thin walls!!
+		if (xPixelLeft >= xPixelRight) {
+	/*		double tmp; // place to store stuff whilst swapping values
+			tmp = xPixelLeft;
+			xPixelLeft = xPixelRight;
+			xPixelRight = tmp;
+
+			tmp = yCornerTL;
+			yCornerTL = yCornerTR;
+			yCornerTR = tmp;
+
+			tmp = yCornerBL;
+			yCornerBL = yCornerBR;
+			yCornerBR = tmp;
+
+			tmp = rotLeftSideZ;
+			rotLeftSideZ = rotRightSideZ;
+			rotRightSideZ = tmp;
+
+			tmp = yPixelLeftTop;
+			yPixelLeftTop = yPixelRightTop;
+			yPixelRightTop = tmp;
+			
+			tmp = yPixelLeftBottom;
+			yPixelLeftBottom = yPixelRightBottom;
+			yPixelRightBottom = tmp;
+*/
+			 return;
+		}
 
 		for (int x = xPixelLeftInt; x < xPixelRightInt; x++) {
 			double pixelRotation = (x - xPixelLeft) / (xPixelRight - xPixelLeft);

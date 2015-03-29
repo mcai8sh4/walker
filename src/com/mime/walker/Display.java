@@ -1,31 +1,25 @@
 package com.mime.walker;
 
-import java.awt.AWTException;
 import java.awt.Canvas;
 import java.awt.Color;
-import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.Point;
-import java.awt.Robot;
-import java.awt.Toolkit;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
-
-import javax.swing.JFrame;
-
 import com.mime.walker.graphics.Screen;
+import com.mime.walker.gui.Launcher;
 import com.mime.walker.input.Controller;
 import com.mime.walker.input.InputHandler;
 
 public class Display extends Canvas implements Runnable {
 	private static final long serialVersionUID = 1L;
 
-	public static final int WIDTH = 800;
-	public static final int HEIGHT = 600;
-	public static final String TITLE = "Walker : pre-alpha 0.02";
+	public static int width = 800;
+	public static int height = 600;
+
+	public static final String TITLE = "Walker : pre-alpha 0.05";
 
 	private Thread thread;
 	private Screen screen;
@@ -35,20 +29,21 @@ public class Display extends Canvas implements Runnable {
 	private int[] pixels;
 	private InputHandler input;
 	private int newX = 0;
-	private int newY = 0;
 	private int oldX = 0;
 	private int fps;
-
+	public static int selection = 0;
 	public static int MouseSpeed;
 
+	static Launcher launcher;
+
 	public Display() {
-		Dimension size = new Dimension(WIDTH, HEIGHT);
+		Dimension size = new Dimension(getGameWidth(), getGameHeight());
 		setPreferredSize(size);
 		setMinimumSize(size);
 		setMaximumSize(size);
-		screen = new Screen(WIDTH, HEIGHT);
+		screen = new Screen(getGameWidth(), getGameHeight());
 		game = new Game();
-		img = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
+		img = new BufferedImage(getGameWidth(), getGameHeight(), BufferedImage.TYPE_INT_RGB);
 		pixels = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
 		input = new InputHandler();
 		addKeyListener(input);
@@ -57,11 +52,28 @@ public class Display extends Canvas implements Runnable {
 		addMouseMotionListener(input);
 	}
 
+	public static Launcher getLauncherInstance() {
+		if (launcher == null) {
+			launcher = new Launcher(0);
+		}
+		return launcher;
+	}
+
+	public static int getGameWidth() {
+
+		return width;
+	}
+
+	public static int getGameHeight() {
+
+		return height;
+	}
+
 	public synchronized void start() {
 		if (running)
 			return;
 		running = true;
-		thread = new Thread(this);
+		thread = new Thread(this, "game");
 		thread.start();
 
 		System.out.println("Working!!");
@@ -75,7 +87,7 @@ public class Display extends Canvas implements Runnable {
 			thread.join();
 		} catch (Exception e) {
 			e.printStackTrace();
-			System.exit(0);
+			System.exit(1);
 		}
 	}
 
@@ -86,14 +98,13 @@ public class Display extends Canvas implements Runnable {
 		double secondsPerTick = 1 / 60.0;
 		int tickCount = 0;
 		boolean ticked = false;
+		requestFocus();
 
 		while (running) {
 			long currentTime = System.nanoTime();
 			long passedTime = currentTime - previousTime;
 			previousTime = currentTime;
 			unprocessedSeconds += passedTime / 1000000000.0;
-
-			requestFocus();
 
 			while (unprocessedSeconds > secondsPerTick) {
 				tick();
@@ -106,57 +117,38 @@ public class Display extends Canvas implements Runnable {
 					previousTime += 1000;
 					frames = 0;
 				}
+
+				// render();
+				frames++;
 			}
 			if (ticked) {
 				render();
 				frames++;
 			}
 
-			render();
-			frames++;
-			newX = InputHandler.MouseX;
-			newY = InputHandler.MouseY;
-			MouseSpeed = Math.abs(newX - oldX);
-
-			Robot robot = null;
-			try {
-				robot = new Robot();
-			} catch (AWTException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
-			if (newX > oldX) {
-			 System.out.println("RIGHT!!!!");
-				Controller.turnRight = true;
-				if (newX > (WIDTH - 100)) {
-					robot.mouseMove((InputHandler.MouseScX - WIDTH / 2), InputHandler.MouseScY);
-				newX = InputHandler.MouseX;
-				oldX = newX +10;
-				}
-				
-			}
-			if (newX < oldX) {
-				 System.out.println("LEFT!!!!");
-				Controller.turnLeft = true;
-				if (newX < 100) {
-					robot.mouseMove((InputHandler.MouseScX + WIDTH / 2), InputHandler.MouseScY);
-					newX = InputHandler.MouseX;
-				}
-			}
-			if (newX == oldX) {
-				 System.out.println("STILL!!!!");
-				Controller.turnRight = false;
-				Controller.turnLeft = false;
-			}
-
-			oldX = newX;
-
 		}
 	}
 
 	private void tick() {
 		game.tick(input.key);
+		newX = InputHandler.MouseX;
+		if (newX > oldX) {
+			// System.out.println("RIGHT!!!!");
+			Controller.turnRight = true;
+
+		}
+		if (newX < oldX) {
+			// System.out.println("LEFT!!!!");
+			Controller.turnLeft = true;
+		}
+		if (newX == oldX) {
+			// System.out.println("STILL!!!!");
+			Controller.turnRight = false;
+			Controller.turnLeft = false;
+		}
+		MouseSpeed = Math.abs(newX - oldX);
+
+		oldX = newX;
 	}
 
 	private void render() {
@@ -168,12 +160,12 @@ public class Display extends Canvas implements Runnable {
 
 		screen.render(game);
 
-		for (int i = 0; i < WIDTH * HEIGHT; i++) {
+		for (int i = 0; i < getGameWidth() * getGameHeight(); i++) {
 			pixels[i] = screen.pixels[i];
 		}
 
 		Graphics g = bs.getDrawGraphics();
-		g.drawImage(img, 0, 0, WIDTH, HEIGHT, null);
+		g.drawImage(img, 0, 0, getGameWidth(), getGameHeight(), null);
 		g.setFont(new Font("Verdana", 2, 25));
 		g.setColor(Color.YELLOW);
 		g.drawString(fps + "fps", 10, 25);
@@ -183,22 +175,7 @@ public class Display extends Canvas implements Runnable {
 	}
 
 	public static void main(String[] args) {
-		BufferedImage cursor = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
-		Cursor blank = Toolkit.getDefaultToolkit().createCustomCursor(cursor, new Point(0, 0), "blank");
-		Display game = new Display();
-		JFrame frame = new JFrame();
-		frame.add(game);
-		frame.pack();
-		// frame.getContentPane().setCursor(blank);
-		frame.setTitle(TITLE);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setLocationRelativeTo(null);
-		frame.setResizable(false);
-		frame.setVisible(true);
-
-		System.out.println("Running...");
-
-		game.start();
+		getLauncherInstance();
 	}
 
 }
